@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CES Search</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#121212;
+    color:#fff;
+}
+
+.topbar{
+    position:sticky;
+    top:0;
+    background:#1b1b1b;
+    padding:12px;
+    border-bottom:1px solid #333;
+    z-index:100;
+}
+
+.search{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:#2a2a2a;
+    color:white;
+    font-size:16px;
+    outline:none;
+}
+
+.search::placeholder{
+    color:#999;
+}
+
+.container{
+    padding:12px;
+    max-width:900px;
+    margin:auto;
+}
+
+.card{
+    background:#1e1e1e;
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:16px;
+    border:1px solid #2e2e2e;
+}
+
+.question{
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:14px;
+    line-height:1.5;
+}
+
+.answer{
+    padding:12px;
+    margin-bottom:10px;
+    border-radius:12px;
+    background:#2a2a2a;
+    line-height:1.5;
+}
+
+.correct{
+    background:#1d4d2f;
+    border:1px solid #3ddc84;
+}
+
+mark{
+    background:#ffd54f;
+    color:black;
+    border-radius:4px;
+    padding:1px 3px;
+}
+
+.stats{
+    margin-top:10px;
+    color:#999;
+    font-size:14px;
+}
+
+@media(max-width:600px){
+
+    .question{
+        font-size:17px;
+    }
+
+    .answer{
+        font-size:15px;
+    }
+
+    .search{
+        font-size:16px;
+    }
+}
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <input
+        id="search"
+        class="search"
+        placeholder="Search question or answer..."
+    >
+</div>
+
+<div class="container" id="results"></div>
+
+<script>
+
+let questions = [];
+
+fetch("questions.json")
+.then(r => r.json())
+.then(data => {
+
+    questions = data;
+
+    render([]);
+});
+
+const results = document.getElementById("results");
+
+function highlight(text, search){
+
+    if(!search) return text;
+
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const regex = new RegExp(`(${escaped})`, "gi");
+
+    return text.replace(regex, "<mark>$1</mark>");
+}
+
+function render(items, search=""){
+
+    results.innerHTML = "";
+
+    const stats = document.createElement("div");
+
+    stats.className = "stats";
+
+    stats.innerText = `Found: ${items.length}`;
+
+    results.appendChild(stats);
+
+    items.forEach(q => {
+
+        const card = document.createElement("div");
+
+        card.className = "card";
+
+        let answersHTML = "";
+
+        q.answers.forEach(a => {
+
+            answersHTML += `
+                <div class="answer ${a.correct ? 'correct' : ''}">
+                    ${highlight(a.text, search)}
+                </div>
+            `;
+        });
+
+        card.innerHTML = `
+            <div class="question">
+                ${highlight(q.question, search)}
+            </div>
+
+            ${answersHTML}
+        `;
+
+        results.appendChild(card);
+    });
+}
+
+document
+.getElementById("search")
+.addEventListener("input", e => {
+
+    const value = e.target.value
+        .trim()
+        .toLowerCase();
+
+    if(value === ""){
+
+        render([]);
+        return;
+    }
+
+    if(value === "checkall"){
+
+        render(questions);
+        return;
+    }
+
+    const words = value.split(/\s+/);
+
+    const filtered = questions.filter(q => {
+
+        const questionText = q.question.toLowerCase();
+
+        const answersText = q.answers
+            .map(a => a.text.toLowerCase())
+            .join(" ");
+
+        const fullText = questionText + " " + answersText;
+
+        return words.every(w => fullText.includes(w));
+    });
+
+    render(filtered, value);
+});
+
+</script>
+
+</body>
+</html>
