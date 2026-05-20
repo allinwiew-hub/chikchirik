@@ -275,10 +275,11 @@ function performSearch(value){
 
     const filtered = questions.filter(q => {
 
-        const question =
-            q.question.toLowerCase();
+        const question = q.question
+    .replace(/^\d+\.\s*/, "")
+    .toLowerCase();
 
-        return question.startsWith(value);
+return question.startsWith(value);
     });
 
     render(filtered, value);
