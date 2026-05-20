@@ -28,8 +28,13 @@ body{
     z-index:100;
 }
 
+.search-box{
+    display:flex;
+    gap:8px;
+}
+
 .search{
-    width:100%;
+    flex:1;
     padding:14px;
     border:none;
     border-radius:12px;
@@ -41,6 +46,15 @@ body{
 
 .search::placeholder{
     color:#999;
+}
+
+.icon-btn{
+    border:none;
+    border-radius:12px;
+    background:#2a2a2a;
+    color:white;
+    width:48px;
+    font-size:18px;
 }
 
 .container{
@@ -86,8 +100,16 @@ mark{
 
 .stats{
     margin-top:10px;
+    margin-bottom:14px;
     color:#999;
     font-size:14px;
+}
+
+.empty{
+    color:#777;
+    text-align:center;
+    margin-top:40px;
+    line-height:1.6;
 }
 
 @media(max-width:600px){
@@ -110,11 +132,26 @@ mark{
 <body>
 
 <div class="topbar">
-    <input
-        id="search"
-        class="search"
-        placeholder="Search question or answer..."
-    >
+
+    <div class="search-box">
+
+        <input
+            id="search"
+            class="search"
+            placeholder="Search by first words..."
+            autocomplete="off"
+        >
+
+        <button id="clearBtn" class="icon-btn">
+            ✖
+        </button>
+
+        <button id="voiceBtn" class="icon-btn">
+            🎤
+        </button>
+
+    </div>
+
 </div>
 
 <div class="container" id="results"></div>
@@ -134,15 +171,31 @@ fetch("questions.json")
 
 const results = document.getElementById("results");
 
+const searchInput =
+    document.getElementById("search");
+
+const clearBtn =
+    document.getElementById("clearBtn");
+
+const voiceBtn =
+    document.getElementById("voiceBtn");
+
 function highlight(text, search){
 
     if(!search) return text;
 
-    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = search.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&'
+    );
 
-    const regex = new RegExp(`(${escaped})`, "gi");
+    const regex =
+        new RegExp(`(${escaped})`, "gi");
 
-    return text.replace(regex, "<mark>$1</mark>");
+    return text.replace(
+        regex,
+        "<mark>$1</mark>"
+    );
 }
 
 function render(items, search=""){
@@ -157,9 +210,25 @@ function render(items, search=""){
 
     results.appendChild(stats);
 
+    if(items.length === 0){
+
+        const empty =
+            document.createElement("div");
+
+        empty.className = "empty";
+
+        empty.innerHTML =
+            "Type first 2-3 words<br>of the question";
+
+        results.appendChild(empty);
+
+        return;
+    }
+
     items.forEach(q => {
 
-        const card = document.createElement("div");
+        const card =
+            document.createElement("div");
 
         card.className = "card";
 
@@ -186,11 +255,9 @@ function render(items, search=""){
     });
 }
 
-document
-.getElementById("search")
-.addEventListener("input", e => {
+function performSearch(value){
 
-    const value = e.target.value
+    value = value
         .trim()
         .toLowerCase();
 
@@ -206,32 +273,69 @@ document
         return;
     }
 
-    const words = value.split(/\s+/);
-
     const filtered = questions.filter(q => {
 
-        const questionText = q.question.toLowerCase();
+        const question =
+            q.question.toLowerCase();
 
-        const answersText = q.answers
-            .map(a => a.text.toLowerCase())
-            .join(" ");
-
-        const fullText = questionText + " " + answersText;
-
-        return words.every(w => fullText.includes(w));
+        return question.startsWith(value);
     });
 
     render(filtered, value);
+}
+
+searchInput.addEventListener("input", e => {
+
+    performSearch(e.target.value);
 });
 
+clearBtn.addEventListener("click", () => {
+
+    searchInput.value = "";
+
+    render([]);
+
+    searchInput.focus();
+});
+
+if("webkitSpeechRecognition" in window){
+
+    const recognition =
+        new webkitSpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.continuous = false;
+
+    recognition.interimResults = false;
+
+    voiceBtn.addEventListener("click", () => {
+
+        recognition.start();
+    });
+
+    recognition.onresult = event => {
+
+        const text =
+            event.results[0][0].transcript;
+
+        searchInput.value = text;
+
+        performSearch(text);
+    };
+}
+
 </script>
+
 <script>
 
 if("serviceWorker" in navigator){
 
-    navigator.serviceWorker.register("./service-worker.js");
+    navigator.serviceWorker
+        .register("./service-worker.js");
 }
 
 </script>
+
 </body>
 </html>
