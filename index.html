@@ -284,11 +284,8 @@ function similarity(a, b){
 }
 
 function performSearch(value){
-   
-    alert("NEW SEARCH WORKS");
 
     value = value
-        .replace(/^\d+\s*/, "")
         .trim()
         .toLowerCase();
 
@@ -303,6 +300,19 @@ function performSearch(value){
         render(questions);
         return;
     }
+
+    const filtered = questions.filter(q => {
+
+        let question = q.question
+            .replace(/^\s*\d+\.\s*/, "")
+            .trim()
+            .toLowerCase();
+
+        return question.includes(value);
+    });
+
+    render(filtered, value);
+}
 
     const filtered = questions.filter(q => {
 
