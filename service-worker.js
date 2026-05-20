@@ -1,4 +1,4 @@
-const CACHE_NAME = "ces-cache-v12";
+const CACHE_NAME = "ces-cache-v13";
 const urlsToCache = [
     "./",
     "./index.html",

@@ -268,6 +268,29 @@ function render(items, search=""){
     });
 }
 
+function similarity(a, b){
+
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+
+    let matches = 0;
+
+    for(
+        let i = 0;
+        i < Math.min(a.length, b.length);
+        i++
+    ){
+
+        if(a[i] === b[i]){
+
+            matches++;
+        }
+    }
+
+    return matches /
+        Math.max(a.length, b.length);
+}
+
 function performSearch(value){
 
     value = normalize(value);
@@ -284,13 +307,36 @@ function performSearch(value){
         return;
     }
 
-    const filtered = questions.filter(q => {
+    let filtered = questions.filter(q => {
 
         const question =
             normalize(q.question);
 
         return question.includes(value);
     });
+
+    if(filtered.length === 0){
+
+        filtered = questions.filter(q => {
+
+            const question =
+                normalize(q.question);
+
+            const start =
+                question
+                .split(" ")
+                .slice(
+                    0,
+                    value.split(" ").length + 2
+                )
+                .join(" ");
+
+            return similarity(
+                start,
+                value
+            ) > 0.65;
+        });
+    }
 
     render(filtered, value);
 }
